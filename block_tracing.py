@@ -24,6 +24,26 @@ if sys.platform.startswith('linux'):
 
     def block_tracing():
         prctl(PR_SET_DUMPABLE, 0, 0, 0, 0)
+elif sys.platform == 'darwin':
+    libc = ctypes.cdll.LoadLibrary(ctypes.util.find_library('c'))
+    ptrace_proto = ctypes.CFUNCTYPE(
+        ctypes.c_int,
+        ctypes.c_int, # request
+        ctypes.c_int,  # pid
+        ctypes.POINTER(ctypes.c_char), # addr
+        ctypes.c_int, # data
+        use_errno=True,
+    )
+    ptrace = ptrace_proto(("ptrace", libc))
+
+    PT_DENY_ATTACH = 31
+
+    def block_tracing():
+        ctypes.set_errno(0)
+        ptrace(PT_DENY_ATTACH, 0, None, 0)
+        errno = ctypes.get_errno()
+        if errno:
+            raise OSError(errno, os.strerror(errno))
 else:
     def block_tracing():
         raise NotImplementedError()

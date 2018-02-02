@@ -25,6 +25,8 @@ if sys.platform.startswith('linux'):
 
     def block_tracing():
         prctl(PR_SET_DUMPABLE, 0, 0, 0, 0)
+
+    BLOCK_TRACING_INHERITS = True
 elif sys.platform == 'darwin':
     libc = ctypes.cdll.LoadLibrary(ctypes.util.find_library('c'))
     ptrace_proto = ctypes.CFUNCTYPE(
@@ -45,6 +47,10 @@ elif sys.platform == 'darwin':
         errno = ctypes.get_errno()
         if errno:
             raise OSError(errno, os.strerror(errno))
+
+    BLOCK_TRACING_INHERITS = False
 else:
     def block_tracing():
         raise NotImplementedError()
+
+    BLOCK_TRACING_INHERITS = False

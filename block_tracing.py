@@ -1,4 +1,5 @@
 import ctypes
+import ctypes.util
 import sys
 
 def unix_errcheck(result, func, args):

@@ -71,6 +71,36 @@ elif sys.platform == 'darwin':
             raise OSError(errno, os.strerror(errno))
 
     BLOCK_TRACING_INHERITS = False
+elif sys.platform.startswith("openbsd"):
+    # check if kern.global_ptrace is set
+    libc = ctypes.cdll.LoadLibrary(ctypes.util.find_library('c'))
+    sysctl_proto = ctypes.CFUNCTYPE(
+        ctypes.c_int,
+        ctypes.POINTER(ctypes.c_int),
+        ctypes.c_uint,
+        ctypes.c_voidp,
+        ctypes.POINTER(ctypes.c_size_t),
+        ctypes.c_voidp,
+        ctypes.c_size_t,
+        use_errno=True,
+    )
+    sysctl = sysctl_proto(("sysctl", libc))
+    sysctl.errcheck = unix_errcheck
+
+    CTL_KERN = 1
+    KERN_GLOBAL_PTRACE = 81
+
+    def block_tracing():
+        two_ints = (ctypes.c_int * 2)(CTL_KERN, KERN_GLOBAL_PTRACE)
+        val = ctypes.c_int()
+        val_size = ctypes.c_size_t(ctypes.sizeof(val))
+        sysctl(two_ints, 2, ctypes.pointer(val), ctypes.pointer(val_size), None, 0)
+        if val.value:
+            # We usually don't have permission to set kern.global_ptrace,
+            # so this is a fine OSError
+            raise OSError(errno.EPERM, os.strerror(errno.EPERM))
+
+    BLOCK_TRACING_INHERITS = True
 else:
     def block_tracing():
         raise NotImplementedError()

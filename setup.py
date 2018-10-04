@@ -7,7 +7,7 @@ with open("README.md", "r") as fh:
 
 setup(
     name="block_tracing",
-    version='1.0.0',
+    version='1.0.1',
     author="Rian Hunter",
     author_email="rian@alum.mit.edu",
     description="Protect process memory",
